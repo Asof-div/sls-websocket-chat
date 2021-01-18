@@ -1,0 +1,164 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: websockets-chat
+# app and org for use with dashboard.serverless.com
+#app: your-app-name
+#org: your-org-name
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  profile: my-profile
+  region: eu-west-1
+  memorySize: 1024
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "dynamodb:PutItem"
+        - "dynamodb:UpdateItem"
+        - "dynamodb:GetItem"
+        - "dynamodb:DeleteItem"
+        - "dynamodb:Scan"
+        - "dynamodb:Query"
+      Resource:
+        - Fn::GetAtt: [ChatConnectionTable, Arn]
+        - Fn::GetAtt: [ChatConversationTable, Arn]
+        - Fn::GetAtt: [ChatMessageTable, Arn]
+        - "arn:aws:dynamodb:*:360520954554:table/*/index/*"
+    - Effect: Allow
+      Action:
+        - "execute-api:ManageConnections"
+      Resource:
+        - "arn:aws:execute-api:*:*:**/@connections/*"
+        - "arn:aws:execute-api:*:*:**/@connections/*"
+       
+
+functions:
+  connectHandler:
+    handler: handler.connectHandler
+    events:
+      - websocket:
+          route: $connect
+  disconnectHandler:
+    handler: handler.disconnectHandler
+    timeout: 300
+    events:
+      - websocket:
+          route: $disconnect
+  defaultHandler:
+    handler: handler.defaultHandler
+    events:
+      - websocket:
+          route: $default
+  sendChatMessageHandler:
+    handler: handler.sendChatMessageHandler
+    timeout: 300
+    events:
+      - websocket:
+          route: message
+  shareQuoteHandler:
+    handler: handler.shareQuoteHandler
+    timeout: 300
+    events:
+      - websocket:
+          route: quote
+  updateQuoteHandler:
+    handler: handler.updateQuoteHandler
+    timeout: 300
+    events:
+      - websocket:
+          route: updateQuote
+  uploadFileeHandler:
+    handler: handler.uploadFileHandler
+    timeout: 300
+    events:
+      - websocket:
+          route: uploadFile
+  getConversationsHandler:
+    handler: handler.getConversationsHandler
+    timeout: 300
+    events:
+      - websocket:
+          route: getConversations
+  getMessagesHandler:
+    handler: handler.getMessagesHandler
+    timeout: 300
+    events:
+      - websocket:
+          route: getMessages
+resources:
+  Resources:
+    ChatConnectionTable:
+      Type: "AWS::DynamoDB::Table"
+      Properties:
+        AttributeDefinitions:
+        - AttributeName: "PK"
+          AttributeType: "S"
+        - AttributeName: "SK"
+          AttributeType: "S"
+        KeySchema:
+        - AttributeName: "PK"
+          KeyType: "HASH"
+        - AttributeName: "SK"
+          KeyType: "RANGE"
+        BillingMode: PAY_PER_REQUEST
+        TableName: teraworkWSConnectionTable
+    ChatConversationTable:
+      Type: "AWS::DynamoDB::Table"
+      Properties:
+        AttributeDefinitions:
+        - AttributeName: "PK"
+          AttributeType: "S"
+        - AttributeName: "SK"
+          AttributeType: "S"
+        KeySchema:
+        - AttributeName: "PK"
+          KeyType: "HASH"
+        - AttributeName: "SK"
+          KeyType: "RANGE"
+        BillingMode: PAY_PER_REQUEST
+        TableName: teraworkChatConversationTable
+        # GlobalSecondaryIndexes:
+        # - IndexName: filter-conversations-by-user
+        #   KeySchema:
+        #   - AttributeName: userName
+        #     KeyType: HASH
+        #   Projection:
+        #     ProjectionType: ALL
+        # - IndexName: filter-conversations-by-id
+        #   KeySchema:
+        #   - AttributeName: conversationId
+        #     KeyType: HASH
+        #   Projection:
+        #     ProjectionType: ALL
+    ChatMessageTable:
+      Type: "AWS::DynamoDB::Table"
+      Properties:
+        AttributeDefinitions:
+        - AttributeName: "PK"
+          AttributeType: "S"
+        - AttributeName: "SK"
+          AttributeType: "S"
+        KeySchema:
+        - AttributeName: "PK"
+          KeyType: "HASH"
+        - AttributeName: "SK"
+          KeyType: "RANGE"
+        BillingMode: PAY_PER_REQUEST
+        TableName: teraworkChatMessageTable
